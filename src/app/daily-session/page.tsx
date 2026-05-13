@@ -1,5 +1,5 @@
-import React from "react";
+import { DailySession } from '@/features/daily-session';
 
 export default function Page() {
-  return <div>daily-session</div>;
+  return <DailySession />;
 }
