@@ -39,3 +39,10 @@ export type ExtraTask = {
   sub: string;
   cat: Category | null;
 };
+
+// Shape returned by the remote API — extend as the backend evolves.
+export type DailySessionData = {
+  id?: string;
+  date?: string;
+  [key: string]: unknown;
+};

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useStore } from './hooks/useStore';
 import { getTodayIdx } from './lib/time';
 import { getTasksForDay } from './lib/tasks';
@@ -10,7 +10,7 @@ import { WeekTab } from './components/WeekTab';
 import { ReviewTab } from './components/ReviewTab';
 import { RoadmapTab } from './components/RoadmapTab';
 import type { SundayReview } from './types';
-import { dailySessionServices } from './services';
+import { useDailySession } from './hooks/useDailySession';
 
 type Tab = 'today' | 'week' | 'review' | 'roadmap';
 
@@ -56,17 +56,29 @@ const GLOBAL_STYLES = `
 
 export function DailySession() {
   const { store, setStore, toggleDay, toggleWeek, count, pct, hour } = useStore();
+  const { loading, error } = useDailySession();
   const [tab, setTab] = useState<Tab>('today');
 
   const todayIdx = getTodayIdx();
   const { schedule, extras, calDay } = getTasksForDay(todayIdx);
-  const getData = async () => {
-    const res = await dailySessionServices.getDailSession();
-    console.log('>>>res', res);
-  };
-  useEffect(() => {
-    getData();
-  }, []);
+
+  if (loading)
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: '#0c0c0f',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#6b6b7a',
+          fontFamily: 'monospace',
+        }}
+      >
+        loading…
+      </div>
+    );
+  if (error) console.warn('[DailySession] remote data unavailable:', error);
 
   function handleThursdayChange(value: string) {
     setStore((s) => ({ ...s, week: { ...s.week, thursdaySentences: value } }));
