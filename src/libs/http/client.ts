@@ -1,4 +1,5 @@
 import type { Middleware, HttpClientConfig, HttpClientOptions, ApiResult } from './types';
+import { loggingMiddleware, retryMiddleware, errorMiddleware } from './middlewares';
 
 function compose(middlewares: Middleware[], terminal: (req: Request) => Promise<Response>) {
   return (req: Request): Promise<Response> => {
@@ -30,7 +31,13 @@ async function parseResponse<T>(res: Response): Promise<ApiResult<T>> {
 }
 
 export function createHttpClient(config: HttpClientConfig) {
-  const { baseURL, defaultHeaders = {}, middlewares = [] } = config;
+  const { baseURL, defaultHeaders = {}, maxRetries = 2, middlewares: custom = [] } = config;
+  const middlewares: Middleware[] = [
+    loggingMiddleware,
+    ...custom,
+    retryMiddleware(maxRetries),
+    errorMiddleware,
+  ];
   const execute = compose(middlewares, (req) => fetch(req));
 
   async function request<T>(method: string, path: string, options: HttpClientOptions = {}): Promise<ApiResult<T>> {
@@ -45,6 +52,7 @@ export function createHttpClient(config: HttpClientConfig) {
       method,
       headers: { 'Content-Type': 'application/json', ...defaultHeaders, ...(headers as Record<string, string>) },
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      // credentials: 'include',
       ...rest,
     });
 

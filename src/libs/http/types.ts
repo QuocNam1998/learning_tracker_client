@@ -16,5 +16,9 @@ export type ApiResult<T> = {
 export type HttpClientConfig = {
   baseURL: string;
   defaultHeaders?: Record<string, string>;
+  maxRetries?: number;
+  // Custom middlewares inserted after auth, before retry and error.
+  // Auth is always included — it silently skips if no token is present,
+  // so public routes work without any extra config.
   middlewares?: Middleware[];
 };
