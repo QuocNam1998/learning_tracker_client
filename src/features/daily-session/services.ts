@@ -1,10 +1,10 @@
 import { createHttpClient } from '@/libs/http';
-import type { DailySessionData } from './types';
+import type { DailySession } from './types';
 
 const client = createHttpClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? '',
+  baseURL: process.env.NEXT_PUBLIC_API_URL_DEV ?? '',
 });
 
 export const dailySessionServices = {
-  getDailySession: () => client.get<DailySessionData>('daily-session'),
+  getDailySession: (startedAt: Date) => client.get<DailySession[]>('daily-session', { params: {startedAt: JSON.stringify(startedAt)} }),
 };

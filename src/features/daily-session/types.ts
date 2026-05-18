@@ -40,6 +40,18 @@ export type ExtraTask = {
   cat: Category | null;
 };
 
+export type SessionType = "calisthenics" | "english" | "technical";
+
+export type DailySession = {
+  id: number;
+  week_id: number;
+  date: string;
+  session_type: SessionType;
+  time_start: string;
+  notes: string;
+  is_completed: boolean;
+};
+
 // Shape returned by the remote API — extend as the backend evolves.
 export type DailySessionData = {
   id?: string;

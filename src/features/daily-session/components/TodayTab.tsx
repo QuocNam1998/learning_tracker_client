@@ -1,11 +1,11 @@
 import { CAL_COLORS, CAT_COLORS, DAYS_FULL, ICONS, LABELS, TARGETS } from '../constants';
-import type { Category, ExtraTask, ScheduleTask, Store } from '../types';
+import type { Category, DailySession, ExtraTask, SessionType, Store } from '../types';
 
 interface TodayTabProps {
   store: Store;
   toggleDay: (key: string) => void;
   todayIdx: number;
-  schedule: ScheduleTask[];
+  schedule: DailySession[];
   extras: ExtraTask[];
   calDay: string;
   hour: number;
@@ -15,12 +15,26 @@ interface TodayTabProps {
 
 const CATEGORIES: Category[] = ['tech', 'english', 'calisthenics', 'couple'];
 
+const SESSION_CATEGORY: Record<SessionType, Category> = {
+  technical: 'tech',
+  calisthenics: 'calisthenics',
+  english: 'english',
+};
+
+function parseHour(timeStart: string): number {
+  return parseInt(timeStart.split(':')[0], 10);
+}
+
+function formatTime(timeStart: string): string {
+  return timeStart.slice(0, 5);
+}
+
 export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay, hour, count, pct }: TodayTabProps) {
+  const doneSchedule = schedule.filter((t) => t.is_completed || !!store.dayDone[String(t.id)]).length;
+  const doneExtras = extras.map((e) => e.key).filter((k) => store.dayDone[k]).length;
   const totalToday = schedule.length + extras.length;
-  const doneToday = [...schedule.map((_, i) => `s${i}`), ...extras.map((e) => e.key)].filter(
-    (k) => store.dayDone[k],
-  ).length;
-  const dayPct = Math.round((doneToday / totalToday) * 100);
+  const doneToday = doneSchedule + doneExtras;
+  const dayPct = totalToday === 0 ? 0 : Math.round((doneToday / totalToday) * 100);
 
   const r = 18;
   const circ = 2 * Math.PI * r;
@@ -80,10 +94,12 @@ export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay,
       {/* Schedule */}
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="sec">📅 Schedule</div>
-        {schedule.map((task, i) => {
-          const key = `s${i}`;
-          const done = !!store.dayDone[key];
-          const isNow = hour >= task.hour && hour < task.hour + 2;
+        {schedule.map((task) => {
+          const key = String(task.id);
+          const done = task.is_completed || !!store.dayDone[key];
+          const taskHour = parseHour(task.time_start);
+          const isNow = hour >= taskHour && hour < taskHour + 2;
+          const cat = SESSION_CATEGORY[task.session_type];
           return (
             <div
               key={key}
@@ -98,7 +114,7 @@ export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay,
                     color: isNow && !done ? 'var(--gold)' : 'var(--muted)',
                   }}
                 >
-                  {task.time}
+                  {formatTime(task.time_start)}
                 </div>
               </div>
               <div className={`circ${done ? ' on' : ''}${isNow && !done ? ' pulse' : ''}`}>
@@ -113,36 +129,21 @@ export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay,
                     marginBottom: 2,
                   }}
                 >
-                  {task.label}
-                  {task.badge && !done && (
-                    <span
-                      className="badge"
-                      style={{
-                        marginLeft: 8,
-                        background: CAL_COLORS[task.badge] + '22',
-                        color: CAL_COLORS[task.badge],
-                        border: `1px solid ${CAL_COLORS[task.badge]}44`,
-                      }}
-                    >
-                      {task.badge}
-                    </span>
-                  )}
+                  {ICONS[cat]} {LABELS[cat]}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)' }}>{task.sub}</div>
+                <div style={{ fontSize: 10, color: 'var(--muted)' }}>{task.notes}</div>
               </div>
-              {task.cat && (
-                <div
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: '50%',
-                    background: CAT_COLORS[task.cat],
-                    flexShrink: 0,
-                    marginTop: 7,
-                    opacity: done ? 0.3 : 1,
-                  }}
-                />
-              )}
+              <div
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: CAT_COLORS[cat],
+                  flexShrink: 0,
+                  marginTop: 7,
+                  opacity: done ? 0.3 : 1,
+                }}
+              />
             </div>
           );
         })}

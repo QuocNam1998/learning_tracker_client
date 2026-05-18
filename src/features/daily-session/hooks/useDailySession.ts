@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useReducer } from 'react';
 import { dailySessionServices } from '../services';
-import type { DailySessionData } from '../types';
+import type { DailySession } from '../types';
 
 type State = {
   loading: boolean;
-  data: DailySessionData | null;
+  data: DailySession[] | null;
   error: string | null;
   status: number;
 };
 
 type Action =
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: DailySessionData; status: number }
+  | { type: 'FETCH_SUCCESS'; payload: DailySession[]; status: number }
   | { type: 'FETCH_ERROR'; payload: string; status: number };
 
 const initial: State = { loading: false, data: null, error: null, status: 0 };
@@ -36,7 +36,8 @@ export function useDailySession() {
 
   const fetchData = useCallback(async () => {
     dispatch({ type: 'FETCH_START' });
-    const { data, error, status, ok } = await dailySessionServices.getDailySession();
+    const startedAt = new Date();
+    const { data, error, status, ok } = await dailySessionServices.getDailySession(startedAt);
     if (ok && data) {
       dispatch({ type: 'FETCH_SUCCESS', payload: data, status });
     } else {
