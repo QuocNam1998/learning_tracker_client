@@ -6,5 +6,7 @@ const client = createHttpClient({
 });
 
 export const dailySessionServices = {
-  getDailySession: (startedAt: Date) => client.get<DailySession[]>('daily-session', { params: {startedAt: JSON.stringify(startedAt)} }),
+  getDailySession: (startedAt?: string) =>
+    client.get<DailySession>(startedAt ? `daily-session?startedAt=${encodeURIComponent(startedAt)}` : 'daily-session'),
+  updateTask: (id: number, isCompleted: boolean) => client.patch<string>(`daily-session/${id}`, { isCompleted }),
 };

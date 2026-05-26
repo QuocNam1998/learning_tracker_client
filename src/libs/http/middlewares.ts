@@ -17,13 +17,14 @@ export const errorMiddleware: Middleware = async (req, next) => {
     const message = err instanceof Error ? err.message : 'Network error';
     console.error(`[HTTP] ✕ ${req.method} ${req.url}:`, message);
     return new Response(JSON.stringify({ message }), {
-      status: 0,
+      status: 503,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 };
 
-export const authMiddleware = (getToken: () => string | null): Middleware =>
+export const authMiddleware =
+  (getToken: () => string | null): Middleware =>
   async (req, next) => {
     const token = getToken();
     if (!token) return next(req);
@@ -33,7 +34,8 @@ export const authMiddleware = (getToken: () => string | null): Middleware =>
   };
 
 // Retries 5xx responses with exponential back-off; leaves 4xx alone.
-export const retryMiddleware = (maxRetries = 2, baseDelayMs = 500): Middleware =>
+export const retryMiddleware =
+  (maxRetries = 2, baseDelayMs = 500): Middleware =>
   async (req, next) => {
     let attempt = 0;
     while (true) {

@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { CAL_COLORS, CAT_COLORS, DAYS_FULL, ICONS, LABELS, TARGETS } from '../constants';
+import { dailySessionServices } from '../services';
 import type { Category, DailySession, ExtraTask, SessionType, Store } from '../types';
 
 interface TodayTabProps {
   store: Store;
-  toggleDay: (key: string) => void;
   todayIdx: number;
   schedule: DailySession[];
   extras: ExtraTask[];
@@ -11,6 +12,7 @@ interface TodayTabProps {
   hour: number;
   count: (cat: Category) => number;
   pct: (cat: Category) => number;
+  onOptimisticUpdate: (id: number, isCompleted: boolean) => void;
 }
 
 const CATEGORIES: Category[] = ['tech', 'english', 'calisthenics', 'couple'];
@@ -29,15 +31,29 @@ function formatTime(timeStart: string): string {
   return timeStart.slice(0, 5);
 }
 
-export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay, hour, count, pct }: TodayTabProps) {
+export function TodayTab({ store, todayIdx, schedule, extras, calDay, hour, count, pct, onOptimisticUpdate }: TodayTabProps) {
   const doneSchedule = schedule.filter((t) => t.is_completed || !!store.dayDone[String(t.id)]).length;
   const doneExtras = extras.map((e) => e.key).filter((k) => store.dayDone[k]).length;
   const totalToday = schedule.length + extras.length;
   const doneToday = doneSchedule + doneExtras;
   const dayPct = totalToday === 0 ? 0 : Math.round((doneToday / totalToday) * 100);
 
+  const [pending, setPending] = useState<Set<number>>(new Set());
+
   const r = 18;
   const circ = 2 * Math.PI * r;
+
+  const toggleTaskState = async (id: number, isCompleted: boolean) => {
+    if (pending.has(id)) return;
+    setPending((prev) => new Set(prev).add(id));
+    const next = !isCompleted;
+    onOptimisticUpdate(id, next);
+    const res = await dailySessionServices.updateTask(id, next);
+    if (!res.ok) {
+      onOptimisticUpdate(id, isCompleted);
+    }
+    setPending((prev) => { const s = new Set(prev); s.delete(id); return s; });
+  };
 
   return (
     <div className="fade">
@@ -100,11 +116,13 @@ export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay,
           const taskHour = parseHour(task.time_start);
           const isNow = hour >= taskHour && hour < taskHour + 2;
           const cat = SESSION_CATEGORY[task.session_type];
+          const isPending = pending.has(task.id);
           return (
             <div
               key={key}
               className={`trow${done ? ' dim' : ''}${isNow && !done ? ' now' : ''}`}
-              onClick={() => toggleDay(key)}
+              style={{ pointerEvents: isPending ? 'none' : undefined, opacity: isPending ? 0.6 : undefined }}
+              onClick={() => toggleTaskState(task.id, task.is_completed)}
             >
               <div style={{ minWidth: 64, paddingTop: 2 }}>
                 <div
@@ -153,7 +171,7 @@ export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay,
       {extras.length > 0 && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div className="sec">⚡ Special Today</div>
-          {extras.map((ex) => {
+          {/* {extras.map((ex) => {
             const done = !!store.dayDone[ex.key];
             return (
               <div key={ex.key} className={`trow${done ? ' dim' : ''}`} onClick={() => toggleDay(ex.key)}>
@@ -173,7 +191,7 @@ export function TodayTab({ store, toggleDay, todayIdx, schedule, extras, calDay,
                 </div>
               </div>
             );
-          })}
+          })} */}
         </div>
       )}
 
