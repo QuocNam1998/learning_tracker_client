@@ -56,7 +56,7 @@ const GLOBAL_STYLES = `
 
 export function DailySession() {
   const { store, setStore, toggleDay, toggleWeek, count, pct, hour } = useStore();
-  const { loading, error, data } = useDailySession();
+  const { loading, error, data, optimisticUpdateTask } = useDailySession();
   const [tab, setTab] = useState<Tab>('today');
 
   const todayIdx = getTodayIdx();
@@ -116,7 +116,6 @@ export function DailySession() {
         {tab === 'today' && (
           <TodayTab
             store={store}
-            toggleDay={toggleDay}
             todayIdx={todayIdx}
             schedule={data ?? []}
             extras={extras}
@@ -124,6 +123,7 @@ export function DailySession() {
             hour={hour}
             count={count}
             pct={pct}
+            onOptimisticUpdate={optimisticUpdateTask}
           />
         )}
         {tab === 'week' && (
