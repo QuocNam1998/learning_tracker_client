@@ -44,8 +44,17 @@ export function useDailySession() {
 
   const fetchData = useCallback(async () => {
     dispatch({ type: 'FETCH_START' });
-    const startedAt = new Date();
-    const { data, error, status, ok } = await dailySessionServices.getDailySession(startedAt);
+
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const { data, error, status, ok } = await dailySessionServices.getDailySession(
+      start.toISOString(),
+      end.toISOString(),
+    );
     if (ok && data) {
       dispatch({ type: 'FETCH_SUCCESS', payload: data, status });
     } else {
