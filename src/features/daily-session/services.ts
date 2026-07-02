@@ -1,12 +1,11 @@
-import { createHttpClient } from '@/libs/http';
+import clientRequestHandler from '@/app/shared/clientRequestHandler';
 import type { DailySession } from './types';
 
-const client = createHttpClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_DEV ?? '',
-});
-
 export const dailySessionServices = {
-  getDailySession: (startedAt?: string) =>
-    client.get<DailySession>(startedAt ? `daily-session?startedAt=${encodeURIComponent(startedAt)}` : 'daily-session'),
-  updateTask: (id: number, isCompleted: boolean) => client.patch<string>(`daily-session/${id}`, { isCompleted }),
+  getDailySession: (start: string, end: string) =>
+    clientRequestHandler.get<Array<DailySession>>(`daily-session`, {
+      params: { start: encodeURIComponent(start), end: encodeURIComponent(end) },
+    }),
+  updateTask: (id: number, isCompleted: boolean) =>
+    clientRequestHandler.patch<string>(`daily-session/${id}`, { isCompleted }),
 };
